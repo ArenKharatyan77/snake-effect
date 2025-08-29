@@ -12,6 +12,9 @@ body {
   overflow: hidden;
   height: 100vh;
   cursor: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 @keyframes gradientShift {
@@ -161,5 +164,50 @@ body {
   50% {
     transform: scale(1.2);
     opacity: 0.8;
+  }
+}
+
+/* Mobile specific styles */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .instructions {
+    font-size: 1rem;
+    bottom: 20px;
+  }
+
+  .snake-segment {
+    width: 18px;
+    height: 18px;
+  }
+
+  .snake-segment.head {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Touch feedback */
+.touch-indicator {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  animation: touchPulse 0.3s ease-out;
+}
+
+@keyframes touchPulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
   }
 }

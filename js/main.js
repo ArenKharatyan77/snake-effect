@@ -3,6 +3,7 @@ const maxSegments = 15;
 let mouseX = 0;
 let mouseY = 0;
 let lastTime = 0;
+let isTouch = false;
 
 // Цвета для сегментов змейки
 const colors = [
@@ -34,7 +35,6 @@ function createSegment(x, y, isHead = false) {
   return segment;
 }
 
-// Извлечение основного цвета из градиента для свечения
 function getColorFromGradient(gradient) {
   const colorMap = {
     "#ff6b6b": "rgba(255, 107, 107, 0.5)",
@@ -54,7 +54,6 @@ function getColorFromGradient(gradient) {
   return "rgba(255, 255, 255, 0.5)";
 }
 
-// Создание частиц
 function createParticle(x, y) {
   const particle = document.createElement("div");
   particle.className = "particle";
@@ -74,31 +73,45 @@ function createParticle(x, y) {
   }, 1000);
 }
 
-// Обновление позиции эффекта свечения
+function createTouchIndicator(x, y) {
+  const indicator = document.createElement("div");
+  indicator.className = "touch-indicator";
+  indicator.style.left = x - 15 + "px";
+  indicator.style.top = y - 15 + "px";
+  document.body.appendChild(indicator);
+
+  setTimeout(() => {
+    if (indicator.parentNode) {
+      indicator.parentNode.removeChild(indicator);
+    }
+  }, 300);
+}
+
 function updateGlowEffect() {
   const glowEffect = document.getElementById("glowEffect");
   glowEffect.style.left = mouseX - 50 + "px";
   glowEffect.style.top = mouseY - 50 + "px";
 }
 
-// Обработка движения мыши
-document.addEventListener("mousemove", (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
+function handleMovement(x, y) {
+  mouseX = x;
+  mouseY = y;
   updateGlowEffect();
 
   const currentTime = Date.now();
   if (currentTime - lastTime > 50) {
-    // Создаем новый сегмент
     const newSegment = createSegment(mouseX, mouseY, snake.length === 0);
-    snake.unshift({ element: newSegment, x: mouseX, y: mouseY });
+    snake.unshift({
+      element: newSegment,
+      x: mouseX,
+      y: mouseY,
+      createdAt: currentTime,
+    });
 
-    // Создаем частицы случайно
     if (Math.random() < 0.3) {
       createParticle(mouseX, mouseY);
     }
 
-    // Удаляем лишние сегменты
     if (snake.length > maxSegments) {
       const oldSegment = snake.pop();
       if (oldSegment.element.parentNode) {
@@ -106,7 +119,6 @@ document.addEventListener("mousemove", (e) => {
       }
     }
 
-    // Обновляем стили сегментов (первый всегда голова)
     snake.forEach((segment, index) => {
       if (index === 0) {
         segment.element.className = "snake-segment head";
@@ -121,16 +133,77 @@ document.addEventListener("mousemove", (e) => {
 
     lastTime = currentTime;
   }
+}
+
+document.addEventListener("mousemove", (e) => {
+  if (!isTouch) {
+    handleMovement(e.clientX, e.clientY);
+  }
 });
 
-// Инициализация эффекта свечения в центре
+document.addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    isTouch = true;
+    const touch = e.touches[0];
+    createTouchIndicator(touch.clientX, touch.clientY);
+    handleMovement(touch.clientX, touch.clientY);
+  },
+  { passive: false }
+);
+
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+    isTouch = true;
+    const touch = e.touches[0];
+    handleMovement(touch.clientX, touch.clientY);
+  },
+  { passive: false }
+);
+
+document.addEventListener(
+  "touchend",
+  (e) => {
+    e.preventDefault();
+    setTimeout(() => {
+      isTouch = false;
+    }, 100);
+  },
+  { passive: false }
+);
+
+document.addEventListener(
+  "touchstart",
+  function (event) {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+let lastTouchEnd = 0;
+document.addEventListener(
+  "touchend",
+  function (event) {
+    const now = new Date().getTime();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  },
+  false
+);
+
 window.addEventListener("load", () => {
   const glowEffect = document.getElementById("glowEffect");
   glowEffect.style.left = window.innerWidth / 2 - 50 + "px";
   glowEffect.style.top = window.innerHeight / 2 - 50 + "px";
 });
 
-// Анимация исчезновения сегментов при неподвижности мыши
 setInterval(() => {
   if (snake.length > 0) {
     const lastSegment = snake[snake.length - 1];
@@ -156,3 +229,11 @@ setInterval(() => {
     }
   }
 }, 3000);
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => {
+    const glowEffect = document.getElementById("glowEffect");
+    glowEffect.style.left = window.innerWidth / 2 - 50 + "px";
+    glowEffect.style.top = window.innerHeight / 2 - 50 + "px";
+  }, 100);
+});
